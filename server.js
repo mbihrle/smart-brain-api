@@ -1,37 +1,48 @@
 process.title = "HTTP Server";
 
-
 require("dotenv").config({
-    path: __dirname + "./../../../.configs/smart-brain.env",
+    path: "./.env",
 });
-
+// require("dotenv").config({
+//     path: __dirname + "./../../../.configs/smart-brain.env",
+// });
 // console.log(process.env);
+
 const express = require("express");
 const bcrypt = require("bcrypt-nodejs");
 const cors = require("cors");
 const knex = require("knex");
+const morgan = require("morgan");
 
 const register = require("./controllers/register");
 const signin = require("./controllers/signin");
 const profile = require("./controllers/profile");
 const image = require("./controllers/image");
 
+const getDatabaseConnection = () => {
+    // Check if Docker-Database is available
+    return process.env.POSTGRES_DOCKER_URI
+        ? process.env.POSTGRES_DOCKER_URI
+        : process.env.DB_URI;
+
+    // if (process.env.POSTGRES_DOCKER_URI) {
+    //     return process.env.POSTGRES_DOCKER_URI;
+    // }
+    // console.log(process.env.DB_URI);
+    // return process.env.DB_URI;
+};
 
 const db = knex({
     // connect to your own database here:
     client: "pg",
-    connection: {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASS,
-        database: process.env.DB,
-    },
+    connection: getDatabaseConnection(),
 });
 
 const app = express();
-
 app.use(cors());
+app.use(morgan("combined"));
 app.use(express.json()); // latest version of exressJS now comes with Body-Parser!
+console.log("its working now");
 
 app.get("/", (req, res) => {
     res.send(db.users);

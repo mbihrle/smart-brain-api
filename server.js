@@ -19,17 +19,13 @@ const signin = require("./controllers/signin");
 const profile = require("./controllers/profile");
 const image = require("./controllers/image");
 
+const auth = require("./middleware/authorization");
+
 const getDatabaseConnection = () => {
     // Check if Docker-Database is available
-    return process.env.POSTGRES_DOCKER_URI
-        ? process.env.POSTGRES_DOCKER_URI
+    return process.env.POSTGRES_URI
+        ? process.env.POSTGRES_URI
         : process.env.DB_URI;
-
-    // if (process.env.POSTGRES_DOCKER_URI) {
-    //     return process.env.POSTGRES_DOCKER_URI;
-    // }
-    // console.log(process.env.DB_URI);
-    // return process.env.DB_URI;
 };
 
 const db = knex({
@@ -42,22 +38,27 @@ const app = express();
 app.use(cors());
 app.use(morgan("combined"));
 app.use(express.json()); // latest version of exressJS now comes with Body-Parser!
-console.log("its working now");
 
 app.get("/", (req, res) => {
     res.send(db.users);
 });
-app.post("/signin", signin.handleSignin(db, bcrypt));
+
+// app.post("/signin", signin.handleSignin(db, bcrypt));
+app.post("/signin", signin.signinAuthentication(db, bcrypt));
+
 app.post("/register", (req, res) => {
     register.handleRegister(req, res, db, bcrypt);
 });
-app.get("/profile/:id", (req, res) => {
+app.get("/profile/:id", auth.requireAuth, (req, res) => {
     profile.handleProfileGet(req, res, db);
 });
-app.put("/image", (req, res) => {
+app.post("/profile/:id", auth.requireAuth, (req, res) => {
+    profile.handleProfileUpdate(req, res, db);
+});
+app.put("/image", auth.requireAuth, (req, res) => {
     image.handleImage(req, res, db);
 });
-app.post("/imageurl", (req, res) => {
+app.post("/imageurl", auth.requireAuth, (req, res) => {
     image.handleApiCall(req, res);
 });
 

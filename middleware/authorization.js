@@ -1,4 +1,3 @@
-const redisClient = require("../controllers/signin").redisClient;
 
 const requireAuth = (req, res, next) => {
     const { authorization } = req.headers;

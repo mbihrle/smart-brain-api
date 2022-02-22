@@ -12,14 +12,20 @@ const express = require("express");
 const bcrypt = require("bcrypt-nodejs");
 const cors = require("cors");
 const knex = require("knex");
+const redis = require("redis");
 const morgan = require("morgan");
 
 const register = require("./controllers/register");
 const signin = require("./controllers/signin");
+const signout = require("./controllers/signout");
 const profile = require("./controllers/profile");
 const image = require("./controllers/image");
 
+//setup Redis:
+redisClient = redis.createClient(process.env.REDIS_URI);
+
 const auth = require("./middleware/authorization");
+// const { redisClient } = require("./controllers/signin");
 
 const getDatabaseConnection = () => {
     // Check if Docker-Database is available
@@ -43,12 +49,16 @@ app.get("/", (req, res) => {
     res.send(db.users);
 });
 
-// app.post("/signin", signin.handleSignin(db, bcrypt));
 app.post("/signin", signin.signinAuthentication(db, bcrypt));
+
+app.post("/signout", (req, res) => {
+    signout.signoutHandler(req, res);
+});
 
 app.post("/register", (req, res) => {
     register.handleRegister(req, res, db, bcrypt);
 });
+
 app.get("/profile/:id", auth.requireAuth, (req, res) => {
     profile.handleProfileGet(req, res, db);
 });
